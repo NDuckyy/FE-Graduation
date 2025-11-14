@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
-import OAuth2FailurePage from './failPage';
+import OAuth2FailurePage from './FailPage';
 
 export default function Page() {
   return (
