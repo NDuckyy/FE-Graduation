@@ -1,0 +1,336 @@
+import {
+  CouncilCreateRequest,
+  CouncilResponse,
+  CouncilApiResponse,
+  CouncilListApiResponse,
+  MyCouncilItem,
+  MyCouncilApiResponse
+} from '../types/council';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+
+class CouncilService {
+  private baseUrl: string;
+
+  constructor() {
+    this.baseUrl = `${API_BASE_URL}/topic-approval-service/api/councils`;
+  }
+
+  private getAuthHeaders(): HeadersInit {
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+    
+    // Get token from localStorage
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+    }
+    
+    return headers;
+  }
+
+  /**
+   * Tạo hội đồng mới
+   */
+  async createCouncil(request: CouncilCreateRequest): Promise<CouncilResponse> {
+    try {
+      console.log('Creating council with request:', request);
+      const response = await fetch(`${this.baseUrl}/create`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        credentials: 'include',
+        body: JSON.stringify(request),
+      });
+
+      console.log('Response status:', response);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }     
+      const data: CouncilApiResponse = await response.json();
+      
+      if (data.code !== 201) {
+        throw new Error(data.message || 'Failed to create council');
+      }
+
+      return data.data;
+    } catch (error) {
+      console.error('Error creating council:', error);
+      throw error;
+    }
+  }
+  /**
+   * Lấy danh sách hội đồng
+   */
+  async getAllCouncils(): Promise<CouncilResponse[]> {
+    try {
+      const response = await fetch(`${this.baseUrl}/all`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data: CouncilListApiResponse = await response.json();
+      console.log('📦 Councils list API response:', data);
+      
+      if (data.code !== 200) {
+        throw new Error(data.message || 'Failed to fetch councils');
+      }
+
+      return Array.isArray(data.data) ? data.data : [data.data];
+    } catch (error) {
+      console.error('Error fetching councils:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Cập nhật trạng thái hội đồng
+   */
+  async updateCouncilStatus(councilId: number, status: string): Promise<CouncilResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/${councilId}/status?status=${encodeURIComponent(status)}`, {
+        method: 'PUT',
+        headers: this.getAuthHeaders(),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data: CouncilApiResponse = await response.json();
+      if (data.code !== 200) {
+        throw new Error(data.message || 'Failed to update council status');
+      }
+      return data.data;
+    } catch (error) {
+      console.error('Error updating council status:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Lấy danh sách hội đồng của người dùng hiện tại
+   */
+  async getMyCouncils(): Promise<MyCouncilItem[]> {
+    try {
+      const response = await fetch(`${this.baseUrl}/my-councils`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+        credentials: 'include',
+      });
+
+      // Nếu response không ok, kiểm tra status code
+      if (!response.ok) {
+        // Nếu là 404 (Not Found), có thể là không có dữ liệu, trả về mảng rỗng
+        if (response.status === 404) {
+          console.log('No councils found for user (404)');
+          return [];
+        }
+        // Các lỗi khác (401, 403, 500, etc.) thì throw error
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data: MyCouncilApiResponse = await response.json();
+      console.log('📦 My councils API response:', data);
+      
+      // Nếu code không phải 200, nhưng có thể là trường hợp không có dữ liệu
+      if (data.code !== 200) {
+        // Nếu message là "No councils found" hoặc tương tự, trả về mảng rỗng
+        if (data.message?.toLowerCase().includes('not found') || 
+            data.message?.toLowerCase().includes('no councils')) {
+          return [];
+        }
+        throw new Error(data.message || 'Failed to fetch my councils');
+      }
+
+      // Trả về mảng rỗng nếu data.data là null/undefined hoặc mảng rỗng
+      if (!data.data) {
+        return [];
+      }
+
+      return Array.isArray(data.data) ? data.data : [data.data];
+    } catch (error) {
+      console.error('Error fetching my councils:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Lấy hội đồng theo ID
+   */
+  async getCouncilById(id: number): Promise<CouncilResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/${id}`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data: CouncilApiResponse = await response.json();
+      console.log('📦 Council details API response:', data);
+      
+      if (data.code !== 200) {
+        throw new Error(data.message || 'Failed to fetch council');
+      }
+
+      return data.data;
+    } catch (error) {
+      console.error('Error fetching council by ID:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Cập nhật hội đồng
+   */
+  async updateCouncil(id: number, updates: Partial<CouncilCreateRequest>): Promise<CouncilResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/${id}`, {
+        method: 'PUT',
+        headers: this.getAuthHeaders(),
+        credentials: 'include',
+        body: JSON.stringify(updates),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data: CouncilApiResponse = await response.json();
+      console.log('📦 Council update API response:', data);
+      
+      if (data.code !== 200) {
+        throw new Error(data.message || 'Failed to update council');
+      }
+
+      return data.data;
+    } catch (error) {
+      console.error('Error updating council:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Xóa hội đồng
+   */
+  async deleteCouncil(id: number): Promise<void> {
+    try {
+      const response = await fetch(`${this.baseUrl}/${id}`, {
+        method: 'DELETE',
+        headers: this.getAuthHeaders(),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('📦 Council delete API response:', data);
+      
+      if (data.code !== 200) {
+        throw new Error(data.message || 'Failed to delete council');
+      }
+    } catch (error) {
+      console.error('Error deleting council:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Utility functions
+   */
+  
+  getStatusDisplay(status: string): string {
+    const statusMap: Record<string, string> = {
+      'PLANNED': 'Đã lập',
+      'IN_PROGRESS': 'Đang chấm', 
+      'COMPLETED': 'Hoàn thành',
+      'RETAKING': 'Đang chấm lại',
+      'CANCELLED': 'Đã hủy',
+    };
+    return statusMap[status] || status;
+  }
+
+  getStatusColor(status: string): string {
+    const colorMap: Record<string, string> = {
+      'PLANNED': 'blue',
+      'IN_PROGRESS': 'orange',
+      'COMPLETED': 'green',
+      'RETAKING': 'purple',
+      'CANCELLED': 'red',
+    };
+    return colorMap[status] || 'default';
+  }
+
+  getRoleDisplay(role: string): string {
+    const roleMap: Record<string, string> = {
+      'CHAIRMAN': 'Chủ tịch',
+      'SECRETARY': 'Thư ký',
+      'MEMBER': 'Thành viên',
+    };
+    return roleMap[role] || role;
+  }
+
+  getRoleColor(role: string): string {
+    const colorMap: Record<string, string> = {
+      'CHAIRMAN': 'gold',
+      'SECRETARY': 'blue',
+      'MEMBER': 'default',
+    };
+    return colorMap[role] || 'default';
+  }
+
+  formatDate(dateString: string): string {
+    if (!dateString) return '';
+    
+    try {
+      const date = new Date(dateString);
+      
+      // Use a consistent format that doesn't depend on locale
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      
+      return `${day}/${month}/${year}`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateString;
+    }
+  }
+
+  formatDateTime(dateString: string): string {
+    if (!dateString) return '';
+    
+    try {
+      const date = new Date(dateString);
+      
+      // Use a consistent format that doesn't depend on locale
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    } catch (error) {
+      console.error('Error formatting date time:', error);
+      return dateString;
+    }
+  }
+}
+
+export const councilService = new CouncilService();
+export default councilService;
