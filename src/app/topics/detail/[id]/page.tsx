@@ -502,7 +502,7 @@ function TopicDetailPage(): JSX.Element {
     );
   }
 
-  const keywords = extractKeywords(currentTopic.description);
+  // const keywords = extractKeywords(currentTopic.description);
   const descriptionText = getDescriptionWithoutKeywords(currentTopic.description);
 
   return (
@@ -544,13 +544,13 @@ function TopicDetailPage(): JSX.Element {
                 <Text strong>{currentTopic.title}</Text>
               </Descriptions.Item>
               
-              <Descriptions.Item label="Mô tả">
+              {/* <Descriptions.Item label="Mô tả">
                 <Paragraph style={{ whiteSpace: 'pre-wrap', marginBottom: 0 }}>
                   {currentTopic.description}
                 </Paragraph>
-              </Descriptions.Item>
+              </Descriptions.Item> */}
 
-              {keywords.length > 0 && (
+              {/* {keywords.length > 0 && (
                 <Descriptions.Item label="Từ khóa">
                   <Space wrap>
                     {keywords.map((keyword, idx) => (
@@ -560,7 +560,7 @@ function TopicDetailPage(): JSX.Element {
                     ))}
                   </Space>
                 </Descriptions.Item>
-              )}
+              )} */}
 
               <Descriptions.Item label="Trạng thái">
                 <Tag color={getStatusColor(currentTopic.status)} className="text-base px-3 py-1">

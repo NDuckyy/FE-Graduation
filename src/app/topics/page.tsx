@@ -115,8 +115,7 @@ export default function TopicUpload(): JSX.Element {
       const headerText = `[${SCHOOL_NAME} | ${formattedDocDateForHeader}]`;
 
       const descriptionWithKeywords =
-        `${headerText}\n${piText}\n\n${values.description}` +
-        membersText;
+        `${values.description}`
 
       const topicData: TopicCreateRequest = {
         title: values.title,
