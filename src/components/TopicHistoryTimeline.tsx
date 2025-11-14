@@ -74,7 +74,7 @@ const TopicHistoryTimeline: React.FC<TopicHistoryTimelineProps> = ({
                 <Text strong className="mr-2">
                   {getActionText(item.actionType)}
                 </Text>
-                <Tag color={getActionColor(item.actionType)} size="small">
+                <Tag color={getActionColor(item.actionType)}>
                   {item.actionType}
                 </Tag>
               </div>
