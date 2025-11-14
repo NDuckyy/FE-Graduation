@@ -48,3 +48,5 @@ package-lock.json
 .copilot/
 *.xml.bak
 copilot.data.migration.*.xml
+
+.env

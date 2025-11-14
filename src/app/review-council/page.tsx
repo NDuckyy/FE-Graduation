@@ -26,6 +26,7 @@ import {
   CheckCircleOutlined,
   EyeOutlined,
   CheckCircleFilled,
+  DownloadOutlined,
 } from '@ant-design/icons';
 import Header from '../../components/combination/Header';
 import Footer from '../../components/combination/Footer';
@@ -115,6 +116,26 @@ const CouncilTable: React.FC<CouncilTableProps> = ({
   onEdit,
   router,
 }) => {
+  const [downloadingTopicId, setDownloadingTopicId] = useState<number | null>(null);
+
+  const handleDownloadTopicFile = async (topicId: number) => {
+    try {
+      setDownloadingTopicId(topicId);
+      const topic = await topicService.getTopicById(topicId);
+      
+      if (topic.filePathUrl) {
+        window.open(topic.filePathUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        toast.error('Đề tài này chưa có file đính kèm.');
+      }
+    } catch (error: any) {
+      toast.error('Không thể tải file đề tài. Vui lòng thử lại.');
+      console.error('Error downloading topic file:', error);
+    } finally {
+      setDownloadingTopicId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: '30px 0' }}>
@@ -244,7 +265,7 @@ const CouncilTable: React.FC<CouncilTableProps> = ({
         title="Hành động"
         key="actions"
         align="center"
-        width={120}
+        width={180}
         render={(_, record: ReviewCouncilUIModel) => (
           <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
             <Tooltip title="Xem chi tiết hội đồng">
@@ -254,6 +275,22 @@ const CouncilTable: React.FC<CouncilTableProps> = ({
                 onClick={() => router.push(`/review-council/grade?id=${record.id}`)}
               />
             </Tooltip>
+            {(currentUser?.role === 'HEADOFDEPARTMENT' || currentUser?.role === 'LECTURER') && (
+              <Tooltip title="Tải file đề tài">
+                <Button
+                  type="text"
+                  icon={
+                    <DownloadOutlined
+                      style={{
+                        color: downloadingTopicId === record.topicID ? '#1890ff' : '#52c41a',
+                      }}
+                    />
+                  }
+                  onClick={() => handleDownloadTopicFile(record.topicID)}
+                  loading={downloadingTopicId === record.topicID}
+                />
+              </Tooltip>
+            )}
             {currentUser?.role === 'HEADOFDEPARTMENT' && (
               <Tooltip
                 title={
@@ -341,25 +378,24 @@ export default function ReviewCouncilPage() {
         return; 
       }
 
-      // Fetch data based on role
+  
       if (user) {
-        // (UPDATED) HOD fetches extra data
+       
         if (user.role === 'HEADOFDEPARTMENT') {
           fetchLecturers();
           fetchApprovedTopics();
         }
 
-        // (UPDATED) Both roles fetch their councils using the same function
         fetchAllCouncils();
       }
     };
 
     fetchCurrentUserAndData();
-  }, []); // Empty dependency array, runs once on mount
+  }, []); 
 
 
 
-  // --- HOD Specific Functions ---
+
 
   const fetchApprovedTopics = async () => {
     try {
@@ -367,7 +403,6 @@ export default function ReviewCouncilPage() {
       const data = await topicService.getApprovedTopics();
       setApprovedTopics(data);
     } catch (err) {
-      toast.error('Không thể tải danh sách đề tài đã được duyệt.');
       setApprovedTopics([]);
     } finally {
       setLoadingApprovedTopics(false);
@@ -380,18 +415,15 @@ export default function ReviewCouncilPage() {
       const data = await reviewCouncilService.getAllLecturers();
       setLecturers(data);
     } catch (err) {
-      toast.error('Không thể tải danh sách giảng viên.');
       setLecturers([]);
     } finally {
       setLoadingLecturers(false);
     }
   };
 
-  // (UPDATED) This function now serves BOTH roles
   const fetchAllCouncils = async () => {
     try {
       setLoadingAllCouncils(true);
-      // This service call fetches data based on the user's role (handled by backend)
       const data = await reviewCouncilService.getAllCouncils();
       const sortedData = [...data].sort((a, b) => {
         if (!a.reviewDate) return 1;
@@ -400,7 +432,6 @@ export default function ReviewCouncilPage() {
       });
       setAllCouncils(sortedData);
     } catch (err) {
-      toast.error('Không thể tải danh sách hội đồng');
       setAllCouncils([]);
     } finally {
       setLoadingAllCouncils(false);
@@ -421,7 +452,6 @@ export default function ReviewCouncilPage() {
       });
       setCouncils(sortedData);
     } catch (err) {
-      toast.error('Không thể tải danh sách hội đồng của đề tài này.');
       setCouncils([]);
     } finally {
       setLoadingCouncils(false);
@@ -434,14 +464,13 @@ export default function ReviewCouncilPage() {
 
   const handleEditCouncil = (council: ReviewCouncilUIModel) => {
     setEditingCouncil(council);
-    setIsModalOpen(false); // Close list modal
-    setIsCouncilDetailModalVisible(false); // Close detail modal
-    setIsModalVisible(true); // Open edit modal
+    setIsModalOpen(false); 
+    setIsCouncilDetailModalVisible(false); 
+    setIsModalVisible(true); 
     setShowReviewDateField(true);
 
     form.resetFields();
     setTimeout(() => {
-      // Đảm bảo accountID là number để so sánh đúng với Select
       const lecturerIds = council.lecturers.map((lec) => {
         return typeof lec.accountID === 'string'
           ? Number(lec.accountID)
@@ -557,10 +586,8 @@ export default function ReviewCouncilPage() {
     }
   };
 
-  // --- HOD Calendar Functions ---
-  // (UPDATED) This function now serves BOTH roles
   const getCalendarEvents = () => {
-    return allCouncils // This state holds the correct data for either role
+    return allCouncils 
       .filter((council) => council.reviewDate)
       .map((council) => ({
         id: council.id,
@@ -578,8 +605,6 @@ export default function ReviewCouncilPage() {
     return (
       <Tooltip title={event.title}>
         {council?.status === 'Hoàn thành' ? (
-          // Icon tick xanh nếu 'Hoàn thành'
-          // Dùng màu trắng để nổi bật trên nền xanh
           <CheckCircleFilled style={{ color: 'white', fontSize: 20 }} />
         ) : (
           // Icon mặc định
@@ -729,20 +754,6 @@ export default function ReviewCouncilPage() {
                     align="center"
                     render={(text: string) => (
                       <span style={{ fontWeight: 500 }}>{text}</span>
-                    )}
-                  />
-                  <Table.Column
-                    title="Mô tả"
-                    dataIndex="description"
-                    key="description"
-                    align="center"
-                    render={(text: string) => (
-                      <Paragraph
-                        ellipsis={{ rows: 2, expandable: false }}
-                        style={{ marginBottom: 0 }}
-                      >
-                        {text}
-                      </Paragraph>
                     )}
                   />
                   <Table.Column
