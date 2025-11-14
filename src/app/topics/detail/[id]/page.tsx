@@ -276,7 +276,7 @@ function TopicDetailPage(): JSX.Element {
       }
       
       const token = getToken();
-      const API_BASE = process.env.TOPIC_API_BASE_URL || 'http://localhost:8080';
+      const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
       // Bước 1: Xóa dữ liệu cũ trong Qdrant
       try {
@@ -546,7 +546,7 @@ function TopicDetailPage(): JSX.Element {
               
               <Descriptions.Item label="Mô tả">
                 <Paragraph style={{ whiteSpace: 'pre-wrap', marginBottom: 0 }}>
-                  {descriptionText}
+                  {currentTopic.description}
                 </Paragraph>
               </Descriptions.Item>
 
