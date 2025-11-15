@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const PUBLIC_PATHS = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/oauth2/fail']
+const PUBLIC_PATHS = ['/auth/login', '/auth/register', '/auth/request-reset','/auth/forgot-password', '/auth/oauth2/fail']
 const HEAD_OF_DEPARTMENT_PREFIX = '/head-of-department'
 const ADMIN_PREFIX = '/admin'
 
