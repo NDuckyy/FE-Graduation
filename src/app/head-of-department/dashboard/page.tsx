@@ -99,13 +99,13 @@ export default function HeadOfDepartmentDashboard() {
                     </Button>
                   </Link>
 
-                  <Button
+                  {/* <Button
                     size="large"
                     className="w-full h-12 text-[#ff6b35] border-[#ff6b35]"
                     icon={<BarChartOutlined />}
                   >
                     Xem báo cáo thống kê
-                  </Button>
+                  </Button> */}
 
                   <Link href="/head-of-department/provide-account">
                     <Button
